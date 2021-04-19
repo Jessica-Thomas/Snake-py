@@ -5,7 +5,6 @@ import random
 
 #apple and block are 40x40 px
 SIZE = 40
-BACKGROUND_COLOR = (97, 24, 44)
 FONT_COLOR = (255,255,255)
 
 class Apple:
@@ -65,8 +64,6 @@ class Snake:
         self.draw()
     
     def draw(self):
-        self.parent_screen.fill(BACKGROUND_COLOR)
-
         for i in range(self.length):
             self.parent_screen.blit(self.block, (self.x[i], self.y[i]))
         pygame.display.flip()
@@ -78,6 +75,11 @@ class Snake:
 class Game:
     def __init__(self):
         pygame.init()
+        pygame.display.set_caption("It's a snaaaaake")
+
+        pygame.mixer.init()
+        # self.background_music()
+
         # creating the game window
         self.surface = pygame.display.set_mode((800, 800))
         # creating the snake object within the game class
@@ -85,6 +87,18 @@ class Game:
         self.snake.draw()
         self.apple = Apple(self.surface)
         self.apple.draw()
+
+    # def background_music(self):
+    #     pygame.mixer.music.load("media/bg_music_1.mp3")
+    #     pygame.mixer.music.play(-1, 0)
+
+    # def play_sound(self, sound_name):
+    #     if sound_name == "crash":
+    #         sound = pygame.mixer.Sound("media/crash.mp3")
+    #     elif sound_name == 'ding':
+    #         sound = pygame.mixer.Sound("media/ding.mp3")
+
+    #     pygame.mixer.Sound.play(sound)
 
     def reset(self):
         self.snake = Snake(self.surface)
@@ -97,12 +111,17 @@ class Game:
                 return True
         return False
 
+    def display_background(self):
+        bg = pygame.image.load("media/background.png")
+        self.surface.blit(bg, (0,0))
+
     def show_score(self):
-        font = pygame.font.SysFont('arial',30)
+        font = pygame.font.SysFont('arial',30, bold=True)
         score = font.render(f"Score: {self.snake.length-1}",True,FONT_COLOR)
         self.surface.blit(score,(600,10))
 
     def play(self):
+        self.display_background()
         self.snake.walk()
         self.apple.draw()
         self.show_score()
@@ -110,22 +129,31 @@ class Game:
 
         # checks if the head of the snake [0] has collided with the apple.... if  true, adds another block to the body.
         if self.collision(self.snake.x[0], self.snake.y[0], self.apple.x, self.apple.y):
+            # self.play_sound("ding")
             self.snake.increase_length()
             self.apple.move()
 
         # logic for snake colliding with itself
         for i in range(3, self.snake.length):
             if self.collision(self.snake.x[0], self.snake.y[0], self.snake.x[i], self.snake.y[i]):
+                # self.play_sound('crash')
                 raise "Game Over, suckkaaaa"
 
+        # snake colliding with the boundries of the window
+        if not (0 <= self.snake.x[0] <= 800 and 0 <= self.snake.y[0] <= 800):
+            # self.play_sound('crash')
+            raise "You hit the side, bro. Game over."
+
     def game_over(self):
-        self.surface.fill(BACKGROUND_COLOR)
-        font = pygame.font.SysFont('arial',20)
+        self.display_background()
+        font = pygame.font.SysFont('arial',25, bold=True)
         line1 = font.render(f"GAME OVER. Your score is {self.snake.length-1}",True,FONT_COLOR)   
         self.surface.blit(line1, (100,300))     
         line2 = font.render("Want to play again? Press Y. To exit, press Escape.", True, FONT_COLOR)
         self.surface.blit(line2, (100,350))     
         pygame.display.flip()
+
+        # pygame.mixer.music.pause()
 
     def reset(self):
         self.snake = Snake(self.surface, 1)
@@ -139,11 +167,13 @@ class Game:
         while running:
             for event in pygame.event.get():
                 if event.type == KEYDOWN:
+
                     # breaks infinite while loop to close game by pressing escape key
                     if event.key == K_ESCAPE:
                         running = False
                   
-                    if event.key == K_RETURN:
+                    if event.key == K_y:
+                        pygame.mixer.music.unpause()
                         pause = False
 
                     #don't process other keystrokes if game is paused
